@@ -1,10 +1,58 @@
 use actix_files as fs;
-use actix_web::{App, HttpServer};
+use actix_web::{http::Error, post, web::Data, App, HttpResponse, HttpServer};
+use git2::Repository;
+use ivyhost::{
+    config::Config,
+    db::conn::Conn,
+    pull::{do_fetch, do_merge},
+};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(fs::Files::new("/static", ".").show_files_listing()))
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    let config = Config::get_config().expect("failed to load config");
+    git_refresh(&config.site_repo, &config.branch);
+    start_application(config).await
+}
+
+pub async fn start_application(config: Config) -> std::io::Result<()> {
+    let conn = config.create_conn();
+    if let Err(x) = conn.init().await {
+        eprintln!("{}", x);
+        return Ok(());
+    }
+
+    let bind = config.bind_address.clone();
+    let port = config.port;
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(Data::new(conn.to_owned()))
+            .app_data(Data::new(config.to_owned()))
+            .service(refresh)
+            .service(fs::Files::new("/", "./static/public").index_file("index.html"))
+    })
+    .bind((bind, port))?
+    .run()
+    .await
+}
+
+fn git_refresh(url: &str, branch: &str) {
+    let repo = match Repository::open("./static") {
+        Ok(repo) => repo,
+        Err(_e) => match Repository::clone(url, "./static") {
+            Ok(repo) => repo,
+            Err(e) => panic!("failed to clone: {}", e),
+        },
+    };
+
+    //git pull
+    let mut remote = repo.find_remote("origin").unwrap();
+    let fetch_commit = do_fetch(&repo, &[branch], &mut remote).unwrap();
+    let _x = do_merge(&repo, &branch, fetch_commit);
+}
+
+#[post("/refresh")]
+pub async fn refresh(state: Data<Config>) -> Result<HttpResponse, Error> {
+    git_refresh(&state.site_repo, &state.branch);
+    Ok(HttpResponse::Ok().body(format!("refreshed")))
 }

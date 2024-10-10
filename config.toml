@@ -1,7 +1,8 @@
 domain="ivytime.gay"
-site_repo="https://github.com/uberfig/ivytime.gay.git"
 bind_address="127.0.0.1"
 port=8020
+site_repo="https://github.com/uberfig/ivytime.gay.git"
+branch="main"
 
 pg_user="ivy"
 pg_password="password"
