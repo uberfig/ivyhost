@@ -1,5 +1,5 @@
-use actix_files as fs;
-use actix_web::{http::Error, post, web::Data, App, HttpResponse, HttpServer};
+use actix_files::{self as fs, NamedFile};
+use actix_web::{dev::{fn_service, ServiceRequest, ServiceResponse}, http::Error, post, web::{self, Data}, App, HttpResponse, HttpServer};
 use git2::Repository;
 use ivyhost::{
     config::Config,
@@ -29,7 +29,17 @@ pub async fn start_application(config: Config) -> std::io::Result<()> {
             .app_data(Data::new(conn.to_owned()))
             .app_data(Data::new(config.to_owned()))
             .service(refresh)
-            .service(fs::Files::new("/", "./static/public").index_file("index.html"))
+            .service(
+                fs::Files::new("/", "./static/public")
+                    .index_file("index.html")
+                    .show_files_listing()
+                    .default_handler(fn_service(|req: ServiceRequest| async {
+                        let (req, _) = req.into_parts();
+                        let file = NamedFile::open_async("./static/public/404.html").await?;
+                        let res = file.into_response(&req);
+                        Ok(ServiceResponse::new(req, res))
+                    })),
+            )
     })
     .bind((bind, port))?
     .run()
@@ -54,5 +64,5 @@ fn git_refresh(url: &str, branch: &str) {
 #[post("/refresh")]
 pub async fn refresh(state: Data<Config>) -> Result<HttpResponse, Error> {
     git_refresh(&state.site_repo, &state.branch);
-    Ok(HttpResponse::Ok().body(format!("refreshed")))
+    Ok(HttpResponse::Ok().body("refreshed"))
 }
