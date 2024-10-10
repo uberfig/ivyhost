@@ -1,0 +1,10 @@
+domain="ivytime.gay"
+site_repo="https://github.com/uberfig/ivytime.gay.git"
+bind_address="127.0.0.1"
+port=8020
+
+pg_user="ivy"
+pg_password="password"
+pg_host="127.0.0.1"
+pg_port=5432
+pg_dbname="ivyhost"
