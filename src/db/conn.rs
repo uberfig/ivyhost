@@ -12,7 +12,7 @@ pub struct Path {
 pub struct Graphnode {
     pub amount: u32,
     pub timestamp_start: i64,
-    pub timestamp_end: i64
+    pub timestamp_end: i64,
 }
 
 #[derive(Serialize, Debug)]
@@ -27,8 +27,19 @@ pub trait Conn {
         &self,
         request: AnalyticsRequest,
     ) -> impl std::future::Future<Output = ()> + Send;
-    fn get_paths_alphabetic(&self, limit: i64, ofset: i64) -> impl std::future::Future<Output = Vec<Path>> + Send;
+    fn get_paths_alphabetic(
+        &self,
+        limit: i64,
+        ofset: i64,
+    ) -> impl std::future::Future<Output = Vec<Path>> + Send;
     async fn get_paths_unique_dec(&self, limit: i64, ofset: i64) -> Vec<Path>;
-    async fn get_graph(&self, path: &str, title: String, duration: i64, limit: i64, ofset: i64) -> GraphView;
+    async fn get_graph(
+        &self,
+        pid: i64,
+        title: String,
+        duration: i64,
+        limit: i64,
+        ofset: i64,
+    ) -> GraphView;
     async fn get_pid(&self, path: &str) -> Option<i64>;
 }

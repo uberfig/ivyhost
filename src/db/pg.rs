@@ -180,19 +180,26 @@ impl Conn for PgConn {
             .await
             .expect("failed to commit transaction");
     }
-    
+
     async fn get_paths_alphabetic(&self, limit: i64, ofset: i64) -> Vec<super::conn::Path> {
         todo!()
     }
-    
+
     async fn get_paths_unique_dec(&self, limit: i64, ofset: i64) -> Vec<super::conn::Path> {
         todo!()
     }
-    
-    async fn get_graph(&self, path: &str, title: String, duration: i64, limit: i64, ofset: i64) -> super::conn::GraphView {
+
+    async fn get_graph(
+        &self,
+        pid: i64,
+        title: String,
+        duration: i64,
+        limit: i64,
+        ofset: i64,
+    ) -> super::conn::GraphView {
         todo!()
     }
-    
+
     async fn get_pid(&self, path: &str) -> Option<i64> {
         todo!()
     }

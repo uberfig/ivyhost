@@ -1,6 +1,6 @@
-use std::time::{SystemTime, UNIX_EPOCH};
 use base64::Engine;
 use sha2::{Digest, Sha256};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use actix_web::{
     body::MessageBody,
@@ -10,7 +10,10 @@ use actix_web::{
     Error,
 };
 
-use crate::{config::Config, db::{conn::Conn, pg::PgConn}};
+use crate::{
+    config::Config,
+    db::{conn::Conn, pg::PgConn},
+};
 
 pub struct AnalyticsRequest {
     pub hashed_ip: String,
@@ -23,10 +26,10 @@ pub async fn simple_analytics(
     next: Next<impl MessageBody>,
 ) -> Result<ServiceResponse<impl MessageBody>, Error> {
     let real_ip_header = req
-    .app_data::<Data<Config>>()
-    .expect("missing config from app data")
-    .real_ip_header
-    .clone();
+        .app_data::<Data<Config>>()
+        .expect("missing config from app data")
+        .real_ip_header
+        .clone();
 
     let conn = req
         .app_data::<Data<PgConn>>()
@@ -45,7 +48,6 @@ pub async fn simple_analytics(
         return fut;
     };
     println!("{}", &ip);
-
 
     if let Ok(val) = &fut {
         if val.response().status().is_success() {

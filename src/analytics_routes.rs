@@ -1,8 +1,13 @@
-use actix_web::{get, web::{self, Data}, Responder};
+use actix_web::{
+    error::ErrorNotFound, get, web::{self, Data}, HttpResponse, Responder, Result
+};
 use lazy_static::lazy_static;
-use tera::Tera;
+use tera::{Context, Tera};
 
-use crate::{config::Config, db::pg::PgConn};
+use crate::{
+    config::Config,
+    db::{conn::Conn, pg::PgConn},
+};
 
 lazy_static! {
     pub static ref TEMPLATES: Tera = {
@@ -19,13 +24,62 @@ lazy_static! {
     };
 }
 
+use std::time::Duration;
+
+trait DurationExt {
+    fn from_hours(hours: u64) -> Duration;
+    fn from_mins(mins: u64) -> Duration;
+    fn from_days(days: u64) -> Duration;
+}
+
+impl DurationExt for Duration {
+    fn from_hours(hours: u64) -> Duration {
+        Duration::from_secs(hours * 60 * 60)
+    }
+    fn from_mins(mins: u64) -> Duration {
+        Duration::from_secs(mins * 60)
+    }
+    
+    fn from_days(days: u64) -> Duration {
+        Duration::from_secs(days * 60 * 60 * 24)
+    }
+}
+
 #[get("/path/{other_url:.*}")]
-async fn path_view(other_url: web::Path<String>, state: Data<Config>, conn: Data<PgConn>) -> impl Responder {
+async fn path_view(
+    other_url: web::Path<String>,
+    state: Data<Config>,
+    conn: Data<PgConn>,
+) -> Result<HttpResponse> {
     let path = format!("/{}", other_url.to_string());
-    path
+    let pid = match conn.get_pid(&path).await {
+        Some(pid) => pid,
+        None => return Err(ErrorNotFound(format!("{} not found", path))),
+    };
+
+    const limit: i64 = 40;
+    const ofset: i64 = 0;
+
+    use std::time::Duration;
+
+    let duration = Duration::from_mins(30).as_millis() as i64;
+    let half_hourly = conn.get_graph(pid, "Half Hourly".to_string(), duration, limit, ofset).await;
+
+    let duration = Duration::from_days(1).as_millis() as i64;
+    let daily = conn.get_graph(pid, "Daily".to_string(), duration, limit, ofset).await;
+
+    let duration = Duration::from_days(30).as_millis() as i64;
+    let monthly = conn.get_graph(pid, "Monthly (30 days)".to_string(), duration, limit, ofset).await;
+    let x = vec![half_hourly, daily, monthly];
+
+    let mut context = Context::new();
+    context.insert("graphs", &x);
+
+    let val = TEMPLATES.render("path.html", &context).expect("tera rendering error");
+
+    Ok(HttpResponse::Ok().body(val))
 }
 
 pub fn get_routes() -> actix_web::Scope {
-    actix_web::web::scope("/analytics")
-        .service(path_view)
+    actix_web::web::scope("/analytics").service(path_view)
 }

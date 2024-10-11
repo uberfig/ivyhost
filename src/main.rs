@@ -9,7 +9,11 @@ use actix_web::{
 };
 use git2::Repository;
 use ivyhost::{
-    analytics::simple_analytics, analytics_routes::get_routes, config::Config, db::conn::Conn, pull::{do_fetch, do_merge}
+    analytics::simple_analytics,
+    analytics_routes::get_routes,
+    config::Config,
+    db::conn::Conn,
+    pull::{do_fetch, do_merge},
 };
 
 #[actix_web::main]
