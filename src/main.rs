@@ -9,10 +9,7 @@ use actix_web::{
 };
 use git2::Repository;
 use ivyhost::{
-    analytics::simple_analytics,
-    config::Config,
-    db::conn::Conn,
-    pull::{do_fetch, do_merge},
+    analytics::simple_analytics, analytics_routes::get_routes, config::Config, db::conn::Conn, pull::{do_fetch, do_merge}
 };
 
 #[actix_web::main]
@@ -37,13 +34,14 @@ pub async fn start_application(config: Config) -> std::io::Result<()> {
             .app_data(Data::new(conn.to_owned()))
             .app_data(Data::new(config.to_owned()))
             .service(refresh)
+            .service(get_routes())
             .service(
-                fs::Files::new("/", "./static/public")
+                fs::Files::new("/", "./static/repo/public")
                     .index_file("index.html")
                     .show_files_listing()
                     .default_handler(fn_service(|req: ServiceRequest| async {
                         let (req, _) = req.into_parts();
-                        let file = NamedFile::open_async("./static/public/404.html").await?;
+                        let file = NamedFile::open_async("./static/repo/public/404.html").await?;
                         let res = file.into_response(&req);
                         Ok(ServiceResponse::new(req, res))
                     })),
@@ -56,9 +54,9 @@ pub async fn start_application(config: Config) -> std::io::Result<()> {
 }
 
 fn git_refresh(url: &str, branch: &str) {
-    let repo = match Repository::open("./static") {
+    let repo = match Repository::open("./static/repo") {
         Ok(repo) => repo,
-        Err(_e) => match Repository::clone(url, "./static") {
+        Err(_e) => match Repository::clone(url, "./static/repo") {
             Ok(repo) => repo,
             Err(e) => panic!("failed to clone: {}", e),
         },
