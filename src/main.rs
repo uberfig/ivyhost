@@ -1,7 +1,15 @@
 use actix_files::{self as fs, NamedFile};
-use actix_web::{dev::{fn_service, ServiceRequest, ServiceResponse}, http::Error, post, web::Data, App, HttpResponse, HttpServer};
+use actix_web::{
+    dev::{fn_service, ServiceRequest, ServiceResponse},
+    http::Error,
+    middleware::from_fn,
+    post,
+    web::Data,
+    App, HttpResponse, HttpServer,
+};
 use git2::Repository;
 use ivyhost::{
+    analytics::simple_analytics,
     config::Config,
     db::conn::Conn,
     pull::{do_fetch, do_merge},
@@ -40,6 +48,7 @@ pub async fn start_application(config: Config) -> std::io::Result<()> {
                         Ok(ServiceResponse::new(req, res))
                     })),
             )
+            .wrap(from_fn(simple_analytics))
     })
     .bind((bind, port))?
     .run()

@@ -1,8 +1,9 @@
 domain="ivytime.gay"
 bind_address="127.0.0.1"
-port=8020
+port=8029
 site_repo="https://github.com/uberfig/ivytime.gay.git"
 branch="main"
+real_ip_header="CF-Connecting-IP"
 
 pg_user="ivy"
 pg_password="password"

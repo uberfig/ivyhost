@@ -10,6 +10,7 @@ pub struct Config {
     pub port: u16,
     pub site_repo: String,
     pub branch: String,
+    pub real_ip_header: String,
 
     pub pg_user: String,
     pub pg_password: String,
