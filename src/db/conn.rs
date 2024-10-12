@@ -27,19 +27,20 @@ pub trait Conn {
         &self,
         request: AnalyticsRequest,
     ) -> impl std::future::Future<Output = ()> + Send;
+    async fn get_total_paths(&self) -> i64;
     fn get_paths_alphabetic(
         &self,
         limit: i64,
         ofset: i64,
     ) -> impl std::future::Future<Output = Vec<Path>> + Send;
-    async fn get_paths_unique_dec(&self, limit: i64, ofset: i64) -> Vec<Path>;
+    async fn get_paths_unique_visitors_dec(&self, limit: i64, ofset: i64) -> Vec<Path>;
     async fn get_graph(
         &self,
         pid: i64,
         title: String,
         duration: i64,
-        limit: i64,
-        ofset: i64,
+        limit: usize,
+        current_time: i64,
     ) -> GraphView;
     async fn get_pid(&self, path: &str) -> Option<i64>;
 }

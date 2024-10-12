@@ -1,8 +1,11 @@
 use std::ops::DerefMut;
 
 use deadpool_postgres::Pool;
+use tokio_postgres::Row;
 
-use super::conn::Conn;
+use crate::db::conn::Graphnode;
+
+use super::conn::{Conn, GraphView, Path};
 
 mod embedded {
     use refinery::embed_migrations;
@@ -181,12 +184,53 @@ impl Conn for PgConn {
             .expect("failed to commit transaction");
     }
 
-    async fn get_paths_alphabetic(&self, limit: i64, ofset: i64) -> Vec<super::conn::Path> {
-        todo!()
+    async fn get_total_paths(&self) -> i64 {
+        let client = self.db.get().await.expect("failed to get client");
+        let stmt = r#"SELECT count(*) as count FROM paths;"#;
+        let stmt = client.prepare(stmt).await.expect("failed to prepare query");
+        client
+            .query(&stmt, &[])
+            .await
+            .expect("failed to get path count")
+            .pop()
+            .expect("did not return count")
+            .get("count")
     }
 
-    async fn get_paths_unique_dec(&self, limit: i64, ofset: i64) -> Vec<super::conn::Path> {
-        todo!()
+    async fn get_paths_alphabetic(&self, limit: i64, ofset: i64) -> Vec<Path> {
+        let client = self.db.get().await.expect("failed to get client");
+        let stmt = r#"
+                SELECT * FROM paths 
+                ORDER BY path ASC
+                LIMIT $1 OFFSET $2;"#;
+        let stmt = client.prepare(stmt).await.expect("failed to prepare query");
+        client
+            .query(&stmt, &[&limit, &ofset])
+            .await
+            .expect("failed to get paths")
+            .iter()
+            .map(|x| x.into())
+            .collect()
+    }
+
+    async fn get_paths_unique_visitors_dec(
+        &self,
+        limit: i64,
+        ofset: i64,
+    ) -> Vec<super::conn::Path> {
+        let client = self.db.get().await.expect("failed to get client");
+        let stmt = r#"
+                SELECT * FROM paths 
+                ORDER BY unique_visitors DESC
+                LIMIT $1 OFFSET $2;"#;
+        let stmt = client.prepare(stmt).await.expect("failed to prepare query");
+        client
+            .query(&stmt, &[&limit, &ofset])
+            .await
+            .expect("failed to get paths")
+            .iter()
+            .map(|x| x.into())
+            .collect()
     }
 
     async fn get_graph(
@@ -194,14 +238,46 @@ impl Conn for PgConn {
         pid: i64,
         title: String,
         duration: i64,
-        limit: i64,
-        ofset: i64,
+        limit: usize,
+        current_time: i64,
     ) -> super::conn::GraphView {
-        todo!()
+        let client = self.db.get().await.expect("failed to get client");
+        let stmt = r#"SELECT COUNT(*) as count FROM requests WHERE pid = $1 AND created_at <= $2  AND created_at > $3;"#;
+        let stmt = client.prepare(stmt).await.expect("failed to prepare query");
+
+        let mut timeline = Vec::<Graphnode>::with_capacity(limit);
+        for i in (0..limit as i64).rev() {
+            let range_recent = current_time - (duration * i);
+            let range_oldest = current_time - (duration * (i + 1));
+
+            let amount: i64 = client
+                .query(&stmt, &[&pid, &range_recent, &range_oldest])
+                .await
+                .expect("failed to get path count")
+                .pop()
+                .expect("did not return count")
+                .get("count");
+
+            timeline.push(Graphnode {
+                amount: amount as u32,
+                timestamp_start: range_oldest,
+                timestamp_end: range_recent,
+            });
+        }
+        GraphView { timeline, title }
     }
 
     async fn get_pid(&self, path: &str) -> Option<i64> {
-        todo!()
+        let client = self.db.get().await.expect("failed to get client");
+        let stmt = r#"
+                SELECT * FROM paths where path = $1;"#;
+        let stmt = client.prepare(stmt).await.expect("failed to prepare query");
+        client
+            .query(&stmt, &[&path])
+            .await
+            .expect("failed to get path count")
+            .pop()
+            .map(|x| x.get("pid"))
     }
 }
 
@@ -233,4 +309,14 @@ pub async fn init(conn: &PgConn) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+impl From<&Row> for Path {
+    fn from(value: &Row) -> Self {
+        Path {
+            path: value.get("path"),
+            total_unique: value.get("unique_visitors"),
+            total_req: value.get("total_requests"),
+        }
+    }
 }
