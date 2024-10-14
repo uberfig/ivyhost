@@ -5,6 +5,7 @@ use actix_web::{
     HttpResponse, Responder, Result,
 };
 use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
 
 use crate::{
@@ -27,7 +28,10 @@ lazy_static! {
     };
 }
 
-use std::time::{Duration, SystemTime};
+use std::{
+    ops::{Rem, RemAssign},
+    time::{Duration, SystemTime},
+};
 
 trait DurationExt {
     fn from_mins(mins: u64) -> Duration;
@@ -105,6 +109,49 @@ async fn path_view(
     Ok(HttpResponse::Ok().body(val))
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
+#[serde(rename_all = "snake_case")]
+enum Ordering {
+    Alphabetical,
+    Unique,
+}
+
+#[derive(Deserialize, Debug)]
+struct Info {
+    page: Option<u64>,
+    order_by: Option<Ordering>,
+}
+#[get("")]
+async fn index(info: web::Query<Info>, conn: Data<PgConn>) -> Result<HttpResponse> {
+    const LIMIT: i64 = 20;
+    let ordering = info.order_by.unwrap_or(Ordering::Alphabetical);
+    let page: i64 = info.page.unwrap_or(0).try_into().unwrap_or(0);
+    let total_pages = conn.get_total_paths().await;
+    let total_pages = match total_pages.rem(&LIMIT) != 0 {
+        true => (total_pages / LIMIT) + 1,
+        false => total_pages / LIMIT,
+    };
+
+    let routes = match ordering {
+        Ordering::Alphabetical => conn.get_paths_alphabetic(LIMIT, page).await,
+        Ordering::Unique => conn.get_paths_unique_visitors_dec(LIMIT, page).await,
+    };
+
+    let mut context = Context::new();
+    context.insert("routes", &routes);
+    context.insert("page", &page);
+    context.insert("total_pages", &total_pages);
+    context.insert("ordering", &ordering);
+
+    let val = TEMPLATES
+        .render("index.html", &context)
+        .expect("tera rendering error");
+
+    Ok(HttpResponse::Ok().body(val))
+}
+
 pub fn get_routes() -> actix_web::Scope {
-    actix_web::web::scope("/analytics").service(path_view)
+    actix_web::web::scope("/analytics")
+        .service(path_view)
+        .service(index)
 }

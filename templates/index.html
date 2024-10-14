@@ -11,58 +11,78 @@
 
 <body>
 
-<nav>
-  <div class="navflex">
-  <a class="logo" href="/analytics">
-    <img src="/me256.png" alt="self portrait of me, I have floofy copper/brown hair and a grey turtleneck"
-      style="width:1.2em;height:1.2em;">
-    
-  </a>
-  <a class="text" href="/analytics">
-    ivy-lytics
-  </a>
-  </div>
-</nav>
+  <nav>
+    <div class="navflex">
+      <a class="logo" href="/analytics">
+        <img src="/me256.png" alt="self portrait of me, I have floofy copper/brown hair and a grey turtleneck"
+          style="width:1.2em;height:1.2em;">
+
+      </a>
+      <a class="text" href="/analytics">
+        ivy-lytics
+      </a>
+    </div>
+  </nav>
 
 
   <section class="section">
     <div class="container">
-        <div class="analytics">
-          <blockquote>
-            <p>note: unique visitor tracking is currently not functional if running behind a reverse proxy</p>
-          </blockquote>
-          
 
-            {% for route in routes %}
-                <hr>
+      <div class="analytics">
+        <h2>ordering:</h2>
+        <a href="/analytics?page={{page}}&order_by=alphabetical">alphabetical</a>
+        <a href="/analytics?page={{page}}&order_by=unique">unique</a>
+        {% for route in routes %}
+        <hr>
 
-                <div class="inline">
-                    <a href="/analytics/path/id/{{ route.path_id }}">
-                      <h2>{{route.path}}</h2>
-                    </a>
-                    
-                    <div>
-                        <p>total requests: {{route.total_requests}}</p>
-                        <p>unique visitors: {{route.unique_visitors}}</p>
-                    </div>
-                </div>
-                                
-            {% endfor %}
-            <hr>
+        <div class="inline">
+          <a href="/analytics/path{{ route.path }}">
+            <h2>{{route.path}}</h2>
+          </a>
 
-            <div class="inline">
+          <div>
+            <dl>
+              <dt>unique visitors</dt>
+              <dd>{{ route.total_unique }}</dd>
 
-              {% for i in range(end=total_pages) %}
+              <dt>total requests</dt>
+              <dd>{{ route.total_requests }}</dd>
+            </dl>
+          </div>
+        </div>
 
-              <a class="text" href="/analytics/{{ i + 1 }}">
-                [{{ i + 1 }}]
-              </a>
+        {% endfor %}
+        <hr>
 
-              {% endfor %}
-              
-            </div>
+        <div class="inline">
+
+          {% if page != 0 %}
+          <a class="text" href="/analytics?page={{ page - 1 }}">
+            [< previous ]
+          </a>
+          {% endif %}
+
+          {% for i in range(end=total_pages) %}
+          {% if i > 20 %}
+          <p>...</p>
+          {% break %}
+          {% endif %}
+
+          <a class="text" href="/analytics?page={{ i }}">
+            [{{ i + 1 }}]
+          </a>
+
+          {% endfor %}
+
+          {% if page < total_pages -1 %}
+          <a class="text" href="/analytics?page={{ page + 1 }}">
+            [ next >]
+          </a>
+          {% endif %}
 
         </div>
+
+      </div>
     </div>
   </section>
 

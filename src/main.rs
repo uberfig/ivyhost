@@ -32,7 +32,10 @@ pub async fn start_application(config: Config) -> std::io::Result<()> {
 
     let bind = config.bind_address.clone();
     let port = config.port;
-    println!("starting server at http://{}:{}", &config.bind_address, &config.port);
+    println!(
+        "starting server at http://{}:{}",
+        &config.bind_address, &config.port
+    );
 
     HttpServer::new(move || {
         App::new()

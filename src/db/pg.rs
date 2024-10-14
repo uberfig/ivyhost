@@ -198,6 +198,7 @@ impl Conn for PgConn {
     }
 
     async fn get_paths_alphabetic(&self, limit: i64, ofset: i64) -> Vec<Path> {
+        let ofset = ofset * limit;
         let client = self.db.get().await.expect("failed to get client");
         let stmt = r#"
                 SELECT * FROM paths 
@@ -218,6 +219,7 @@ impl Conn for PgConn {
         limit: i64,
         ofset: i64,
     ) -> Vec<super::conn::Path> {
+        let ofset = ofset * limit;
         let client = self.db.get().await.expect("failed to get client");
         let stmt = r#"
                 SELECT * FROM paths 

@@ -43,13 +43,11 @@ pub async fn simple_analytics(
     // post-processing
 
     let Some(ip) = ip else {
-        println!("no real ip header");
         return fut;
     };
     let Ok(ip) = ip.to_str() else {
         return fut;
     };
-    println!("{}", &ip);
 
     if let Ok(val) = &fut {
         if val.response().status().is_success() {

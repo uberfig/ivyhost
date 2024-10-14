@@ -34,7 +34,11 @@ pub trait Conn {
         limit: i64,
         ofset: i64,
     ) -> impl std::future::Future<Output = Vec<Path>> + Send;
-    fn get_paths_unique_visitors_dec(&self, limit: i64, ofset: i64) -> impl std::future::Future<Output = Vec<Path>> + Send;
+    fn get_paths_unique_visitors_dec(
+        &self,
+        limit: i64,
+        ofset: i64,
+    ) -> impl std::future::Future<Output = Vec<Path>> + Send;
     fn get_graph_total(
         &self,
         pid: i64,

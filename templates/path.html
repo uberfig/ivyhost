@@ -76,17 +76,18 @@
         <dl>
           <dt>unique visitors</dt>
           <dd>{{ path.total_unique }}</dd>
-        
+
           <dt>total requests</dt>
           <dd>{{ path.total_requests }}</dd>
         </dl>
 
-        
+
         <h2>Unique Requests</h2>
 
         <blockquote>
-          <p>note: these graphs are only unique per bar, ie if a user visits this past hour and the one before, 
-            they will be counted in both. however they will not be counted multiple times within the same bar like in total requests</p>
+          <p>note: these graphs are only unique per bar, ie if a user visits this past hour and the one before,
+            they will be counted in both. however they will not be counted multiple times within the same bar like in
+            total requests</p>
         </blockquote>
 
         {% for graph in graphs_unique %}
@@ -109,7 +110,8 @@
           {% for i in graph.timeline %}
           {# {{ i.amount }} #}
 
-          <div class="analytics-bar" style="height: {{ 2+ i.amount * 100.0 / max_amount }}px;" data-timestamp_start="{{ i.timestamp_start }}" data-timestamp_end="{{ i.timestamp_end }}">
+          <div class="analytics-bar" style="height: {{ 2+ i.amount * 100.0 / max_amount }}px;"
+            data-timestamp_start="{{ i.timestamp_start }}" data-timestamp_end="{{ i.timestamp_end }}">
             <span class="tooltiptext">{{ i.amount }}</span>
           </div>
           {# width: 10px; height: {{ i.amount * 20 / max_amount }}px; #}
@@ -119,7 +121,7 @@
         </div>
 
         {% endfor %}
-        
+
 
         <h2>Total Requests</h2>
         {% for graph in graphs_total %}
@@ -142,7 +144,8 @@
           {% for i in graph.timeline %}
           {# {{ i.amount }} #}
 
-          <div class="analytics-bar" style="height: {{ 2+ i.amount * 100.0 / max_amount }}px;" data-timestamp_start="{{ i.timestamp_start }}" data-timestamp_end="{{ i.timestamp_end }}">
+          <div class="analytics-bar" style="height: {{ 2+ i.amount * 100.0 / max_amount }}px;"
+            data-timestamp_start="{{ i.timestamp_start }}" data-timestamp_end="{{ i.timestamp_end }}">
             <span class="tooltiptext">{{ i.amount }}</span>
           </div>
           {# width: 10px; height: {{ i.amount * 20 / max_amount }}px; #}
