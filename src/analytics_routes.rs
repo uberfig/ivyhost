@@ -67,23 +67,36 @@ async fn path_view(
         .as_millis() as i64;
 
     let duration = Duration::from_mins(30).as_millis() as i64;
-    let half_hourly = conn
-        .get_graph(pid, "Half Hourly".to_string(), duration, LIMIT, time)
+    let half_hourly_total = conn
+        .get_graph_total(pid, "Half Hourly".to_string(), duration, LIMIT, time)
+        .await;
+    let half_hourly_unique = conn
+        .get_graph_unique(pid, "Half Hourly".to_string(), duration, LIMIT, time)
         .await;
 
     let duration = Duration::from_days(1).as_millis() as i64;
-    let daily = conn
-        .get_graph(pid, "Daily".to_string(), duration, LIMIT, time)
+    let daily_total = conn
+        .get_graph_total(pid, "Daily".to_string(), duration, LIMIT, time)
+        .await;
+    let daily_unique = conn
+        .get_graph_unique(pid, "Daily".to_string(), duration, LIMIT, time)
         .await;
 
     let duration = Duration::from_days(30).as_millis() as i64;
-    let monthly = conn
-        .get_graph(pid, "Monthly (30 days)".to_string(), duration, LIMIT, time)
+    let monthly_total = conn
+        .get_graph_total(pid, "Monthly (30 days)".to_string(), duration, LIMIT, time)
         .await;
-    let x = vec![half_hourly, daily, monthly];
+    let monthly_unique = conn
+        .get_graph_unique(pid, "Monthly (30 days)".to_string(), duration, LIMIT, time)
+        .await;
+    let totals = vec![half_hourly_total, daily_total, monthly_total];
+    let uniques = vec![half_hourly_unique, daily_unique, monthly_unique];
+    let path = conn.get_path(pid).await;
 
     let mut context = Context::new();
-    context.insert("graphs", &x);
+    context.insert("graphs_total", &totals);
+    context.insert("graphs_unique", &uniques);
+    context.insert("path", &path);
 
     let val = TEMPLATES
         .render("path.html", &context)

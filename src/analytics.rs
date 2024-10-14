@@ -37,11 +37,13 @@ pub async fn simple_analytics(
         .clone();
     let path = req.path().to_string();
     let ip = req.headers().get(real_ip_header).cloned();
+
     // pre-processing
     let fut = next.call(req).await;
     // post-processing
 
     let Some(ip) = ip else {
+        println!("no real ip header");
         return fut;
     };
     let Ok(ip) = ip.to_str() else {

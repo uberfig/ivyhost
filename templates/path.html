@@ -72,14 +72,59 @@
   <section class="section">
     <div class="container">
       <div class="analytics">
+        <h1>{{ path.path }}</h1>
+        <dl>
+          <dt>unique visitors</dt>
+          <dd>{{ path.total_unique }}</dd>
+        
+          <dt>total requests</dt>
+          <dd>{{ path.total_requests }}</dd>
+        </dl>
+
+        
+        <h2>Unique Requests</h2>
+
         <blockquote>
-          <p>note: unique visitor tracking is currently not functional if running behind a reverse proxy. These graphs are only showing requests</p>
+          <p>note: these graphs are only unique per bar, ie if a user visits this past hour and the one before, 
+            they will be counted in both. however they will not be counted multiple times within the same bar like in total requests</p>
         </blockquote>
 
+        {% for graph in graphs_unique %}
 
-        {% for graph in graphs %}
+        <h3>{{ graph.title }}</h3>
+        {% set_global max_amount = 0 %}
 
-        <h2>{{ graph.title }}</h2>
+        {% for i in graph.timeline %}
+
+        {% if i.amount > max_amount %}
+        {% set_global max_amount = i.amount %}
+        {% endif %}
+
+        {% endfor %}
+
+        <p style="margin-bottom: 0%;">max: {{ max_amount }}</p>
+
+        <div class="analytics-graph">
+
+          {% for i in graph.timeline %}
+          {# {{ i.amount }} #}
+
+          <div class="analytics-bar" style="height: {{ 2+ i.amount * 100.0 / max_amount }}px;" data-timestamp_start="{{ i.timestamp_start }}" data-timestamp_end="{{ i.timestamp_end }}">
+            <span class="tooltiptext">{{ i.amount }}</span>
+          </div>
+          {# width: 10px; height: {{ i.amount * 20 / max_amount }}px; #}
+
+          {% endfor %}
+
+        </div>
+
+        {% endfor %}
+        
+
+        <h2>Total Requests</h2>
+        {% for graph in graphs_total %}
+
+        <h3>{{ graph.title }}</h3>
         {% set_global max_amount = 0 %}
 
         {% for i in graph.timeline %}

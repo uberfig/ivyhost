@@ -233,7 +233,7 @@ impl Conn for PgConn {
             .collect()
     }
 
-    async fn get_graph(
+    async fn get_graph_total(
         &self,
         pid: i64,
         title: String,
@@ -243,6 +243,40 @@ impl Conn for PgConn {
     ) -> super::conn::GraphView {
         let client = self.db.get().await.expect("failed to get client");
         let stmt = r#"SELECT COUNT(*) as count FROM requests WHERE pid = $1 AND created_at <= $2  AND created_at > $3;"#;
+        let stmt = client.prepare(stmt).await.expect("failed to prepare query");
+
+        let mut timeline = Vec::<Graphnode>::with_capacity(limit);
+        for i in (0..limit as i64).rev() {
+            let range_recent = current_time - (duration * i);
+            let range_oldest = current_time - (duration * (i + 1));
+
+            let amount: i64 = client
+                .query(&stmt, &[&pid, &range_recent, &range_oldest])
+                .await
+                .expect("failed to get path count")
+                .pop()
+                .expect("did not return count")
+                .get("count");
+
+            timeline.push(Graphnode {
+                amount: amount as u32,
+                timestamp_start: range_oldest,
+                timestamp_end: range_recent,
+            });
+        }
+        GraphView { timeline, title }
+    }
+
+    async fn get_graph_unique(
+        &self,
+        pid: i64,
+        title: String,
+        duration: i64,
+        limit: usize,
+        current_time: i64,
+    ) -> super::conn::GraphView {
+        let client = self.db.get().await.expect("failed to get client");
+        let stmt = r#"SELECT COUNT(DISTINCT uid) as count FROM requests WHERE pid = $1 AND created_at <= $2  AND created_at > $3;"#;
         let stmt = client.prepare(stmt).await.expect("failed to prepare query");
 
         let mut timeline = Vec::<Graphnode>::with_capacity(limit);
@@ -278,6 +312,24 @@ impl Conn for PgConn {
             .expect("failed to get path count")
             .pop()
             .map(|x| x.get("pid"))
+    }
+
+    async fn get_path(&self, pid: i64) -> Path {
+        let client = self.db.get().await.expect("failed to get client");
+        let stmt = r#"
+                SELECT * FROM paths where pid = $1;"#;
+        let stmt = client.prepare(stmt).await.expect("failed to prepare query");
+        let result = client
+            .query(&stmt, &[&pid])
+            .await
+            .expect("failed to get path count")
+            .pop()
+            .expect("pid does not exist");
+        Path {
+            path: result.get("path"),
+            total_unique: result.get("unique_visitors"),
+            total_requests: result.get("total_requests"),
+        }
     }
 }
 
@@ -316,7 +368,7 @@ impl From<&Row> for Path {
         Path {
             path: value.get("path"),
             total_unique: value.get("unique_visitors"),
-            total_req: value.get("total_requests"),
+            total_requests: value.get("total_requests"),
         }
     }
 }
