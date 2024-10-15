@@ -55,7 +55,6 @@ async fn path_view(
     conn: Data<PgConn>,
 ) -> Result<HttpResponse> {
     let path = format!("/{}", other_url.to_string());
-    println!("{}", &path);
     let pid = match conn.get_pid(&path).await {
         Some(pid) => pid,
         None => return Err(ErrorNotFound(format!("{} not found", path))),
