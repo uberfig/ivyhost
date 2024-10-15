@@ -56,5 +56,5 @@ pub trait Conn {
         current_time: i64,
     ) -> impl std::future::Future<Output = GraphView> + Send;
     fn get_pid(&self, path: &str) -> impl std::future::Future<Output = Option<i64>> + Send;
-    async fn get_path(&self, pid: i64) -> Path;
+    fn get_path(&self, pid: i64) -> impl std::future::Future<Output = Path> + Send;
 }

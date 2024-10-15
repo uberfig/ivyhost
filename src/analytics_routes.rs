@@ -2,16 +2,15 @@ use actix_web::{
     error::ErrorNotFound,
     get,
     web::{self, Data},
-    HttpResponse, Responder, Result,
+    HttpResponse, Result,
 };
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use tera::{Context, Tera};
 
-use crate::{
-    config::Config,
-    db::{conn::Conn, pg::PgConn},
-};
+use crate::
+    db::{conn::Conn, pg::PgConn}
+;
 
 lazy_static! {
     pub static ref TEMPLATES: Tera = {
@@ -29,21 +28,21 @@ lazy_static! {
 }
 
 use std::{
-    ops::{Rem, RemAssign},
+    ops::Rem,
     time::{Duration, SystemTime},
 };
 
 trait DurationExt {
-    fn from_mins(mins: u64) -> Duration;
-    fn from_days(days: u64) -> Duration;
+    fn mins(mins: u64) -> Duration;
+    fn days(days: u64) -> Duration;
 }
 
 impl DurationExt for Duration {
-    fn from_mins(mins: u64) -> Duration {
+    fn mins(mins: u64) -> Duration {
         Duration::from_secs(mins * 60)
     }
 
-    fn from_days(days: u64) -> Duration {
+    fn days(days: u64) -> Duration {
         Duration::from_secs(days * 60 * 60 * 24)
     }
 }
@@ -69,7 +68,7 @@ async fn path_view(
         .unwrap()
         .as_millis() as i64;
 
-    let duration = Duration::from_mins(30).as_millis() as i64;
+    let duration = Duration::mins(30).as_millis() as i64;
     let half_hourly_total = conn
         .get_graph_total(pid, "Half Hourly".to_string(), duration, LIMIT, time)
         .await;
@@ -77,7 +76,7 @@ async fn path_view(
         .get_graph_unique(pid, "Half Hourly".to_string(), duration, LIMIT, time)
         .await;
 
-    let duration = Duration::from_days(1).as_millis() as i64;
+    let duration = Duration::days(1).as_millis() as i64;
     let daily_total = conn
         .get_graph_total(pid, "Daily".to_string(), duration, LIMIT, time)
         .await;
@@ -85,7 +84,7 @@ async fn path_view(
         .get_graph_unique(pid, "Daily".to_string(), duration, LIMIT, time)
         .await;
 
-    let duration = Duration::from_days(30).as_millis() as i64;
+    let duration = Duration::days(30).as_millis() as i64;
     let monthly_total = conn
         .get_graph_total(pid, "Monthly (30 days)".to_string(), duration, LIMIT, time)
         .await;
