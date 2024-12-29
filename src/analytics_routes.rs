@@ -59,7 +59,7 @@ async fn path_view(
         None => return Err(ErrorNotFound(format!("{} not found", path))),
     };
 
-    const LIMIT: usize = 40;
+    const LIMIT: usize = 30;
 
     use std::time::Duration;
 

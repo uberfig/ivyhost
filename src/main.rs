@@ -19,7 +19,9 @@ use ivyhost::{
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let config = Config::get_config().expect("failed to load config");
-    git_refresh(&config.site_repo, &config.branch);
+    if let Err(git_refresh_err) = git_refresh(&config.site_repo, &config.branch) {
+        println!("{}", git_refresh_err);
+    }
     start_application(config).await
 }
 
@@ -61,7 +63,7 @@ pub async fn start_application(config: Config) -> std::io::Result<()> {
     .await
 }
 
-fn git_refresh(url: &str, branch: &str) {
+fn git_refresh(url: &str, branch: &str) -> Result<(), String> {
     let repo = match Repository::open("./static/repo") {
         Ok(repo) => repo,
         Err(_e) => match Repository::clone(url, "./static/repo") {
@@ -71,13 +73,24 @@ fn git_refresh(url: &str, branch: &str) {
     };
 
     //git pull
-    let mut remote = repo.find_remote("origin").unwrap();
-    let fetch_commit = do_fetch(&repo, &[branch], &mut remote).unwrap();
-    let _x = do_merge(&repo, &branch, fetch_commit);
+    let Ok(mut remote) = repo.find_remote("origin") else {
+        return Err("failed to find remote".to_string());
+    };
+    let Ok(fetch_commit) = do_fetch(&repo, &[branch], &mut remote) else {
+        return Err("failed to fetch commit".to_string());
+    };
+    let merge_res = do_merge(&repo, &branch, fetch_commit);
+    match merge_res {
+        Ok(_) => Ok(()),
+        Err(err) => Err(err.to_string()),
+    }
 }
 
 #[post("/refresh")]
 pub async fn refresh(state: Data<Config>) -> Result<HttpResponse, Error> {
-    git_refresh(&state.site_repo, &state.branch);
+    let res = git_refresh(&state.site_repo, &state.branch);
+    if let Err(res) = res {
+        println!("{}", res);
+    }
     Ok(HttpResponse::Ok().body("refreshed"))
 }

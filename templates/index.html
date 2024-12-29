@@ -57,7 +57,7 @@
         <div class="inline">
 
           {% if page != 0 %}
-          <a class="text" href="/analytics?page={{ page - 1 }}">
+          <a class="text" href="/analytics?page={{ page - 1 }}&order_by={{ ordering }}">
             [< previous ]
           </a>
           {% endif %}
@@ -68,14 +68,14 @@
           {% break %}
           {% endif %}
 
-          <a class="text" href="/analytics?page={{ i }}">
+          <a class="text" href="/analytics?page={{ i }}&order_by={{ ordering }}">
             [{{ i + 1 }}]
           </a>
 
           {% endfor %}
 
           {% if page < total_pages -1 %}
-          <a class="text" href="/analytics?page={{ page + 1 }}">
+          <a class="text" href="/analytics?page={{ page + 1 }}&order_by={{ ordering }}">
             [ next >]
           </a>
           {% endif %}
