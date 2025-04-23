@@ -47,6 +47,7 @@ pub async fn start_application(config: Config) -> std::io::Result<()> {
             .service(get_routes())
             .service(
                 fs::Files::new("/", "./static/repo/public")
+                    .use_hidden_files()
                     .index_file("index.html")
                     .show_files_listing()
                     .default_handler(fn_service(|req: ServiceRequest| async {
